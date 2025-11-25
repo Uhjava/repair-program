@@ -24,19 +24,27 @@ const App = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [reports, setReports] = useState<DamageReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Load Data on Mount
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      await seedDatabaseIfEmpty(); // Initialize Local Storage defaults if needed
+  // Load Data function
+  const loadData = async () => {
+    setIsRefreshing(true);
+    try {
+      await seedDatabaseIfEmpty(); // Initialize if needed
       const fetchedUnits = await fetchUnits();
       const fetchedReports = await fetchReports();
       setUnits(fetchedUnits);
       setReports(fetchedReports);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+    } finally {
       setIsLoading(false);
-    };
+      setIsRefreshing(false);
+    }
+  };
 
+  // Load Data on Mount
+  useEffect(() => {
     loadData();
   }, []);
 
@@ -249,13 +257,15 @@ const App = () => {
                         <p className="text-slate-400 font-mono text-sm mt-1">Odometer: {currentUnit.mileage.toLocaleString()} mi</p>
                     )}
                 </div>
-                <button
-                    onClick={() => setIsCreatingReport(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                >
-                    <AlertTriangle className="h-5 w-5" />
-                    Report Damage
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setIsCreatingReport(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                    >
+                        <AlertTriangle className="h-5 w-5" />
+                        Report Damage
+                    </button>
+                </div>
             </div>
           </div>
 
@@ -466,7 +476,9 @@ const App = () => {
         currentUser={currentUser}
         onLogout={handleLogout}
         onOpenSync={() => setIsSyncModalOpen(true)}
+        onRefreshData={loadData}
         isOffline={false} // Always false because we are in Local Storage mode which is always "online" for the user
+        isRefreshing={isRefreshing}
     >
         {renderContent()}
         <SyncModal 

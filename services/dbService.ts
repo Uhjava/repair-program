@@ -14,6 +14,8 @@ const getDbUrl = () => {
 };
 
 const DB_URL = getDbUrl();
+// Log for debugging (safe, doesn't log the full key if logic prevents it, but helpful to know if it exists)
+if (DB_URL) console.log("Neon DB URL found. Initializing connection...");
 const sql = DB_URL ? neon(DB_URL) : null;
 
 // KEYS for LocalStorage (Fallback)
@@ -130,9 +132,11 @@ export const seedDatabaseIfEmpty = async () => {
           )
         `;
       }
+    } else {
+        console.log("Connected to Neon DB (Data exists).");
     }
   } catch (err) {
-    console.error("Database Seeding Error:", err);
+    console.error("Database Seeding/Connection Error:", err);
   }
   return true;
 };
@@ -225,15 +229,11 @@ export const updateReport = async (reportId: string, updates: Partial<DamageRepo
     return;
   }
   
-  // Dynamic update query builder using helper logic isn't trivial with simple tagged templates,
-  // so we handle specific known updates commonly used in the app.
-  
   if (updates.status && updates.resolvedAt) {
     await sql`UPDATE damage_reports SET status=${updates.status}, resolved_at=${updates.resolvedAt} WHERE id=${reportId}`;
   } else if (updates.status && updates.approvedBy && updates.approvedAt) {
      await sql`UPDATE damage_reports SET status=${updates.status}, approved_by=${updates.approvedBy}, approved_at=${updates.approvedAt} WHERE id=${reportId}`;
   } else {
-      // Fallback for generic updates if we add more later
       console.warn("Complex update not fully implemented in SQL adapter yet.");
   }
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Truck, LayoutDashboard, AlertTriangle, UserCircle, LogOut, Cloud, Database, Wifi, WifiOff } from 'lucide-react';
+import { Truck, LayoutDashboard, AlertTriangle, UserCircle, LogOut, Cloud, Database, RefreshCw } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { isDbConfigured } from '../services/dbService';
 
@@ -10,10 +10,22 @@ interface LayoutProps {
   currentUser: User;
   onLogout: () => void;
   onOpenSync: () => void;
+  onRefreshData: () => void;
   isOffline: boolean;
+  isRefreshing: boolean;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, currentUser, onLogout, onOpenSync, isOffline }) => {
+export const Layout: React.FC<LayoutProps> = ({ 
+  children, 
+  activeTab, 
+  onTabChange, 
+  currentUser, 
+  onLogout, 
+  onOpenSync, 
+  onRefreshData,
+  isOffline,
+  isRefreshing
+}) => {
   const isDatabaseConnected = isDbConfigured();
 
   return (
@@ -47,7 +59,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
                 )}
              </div>
 
-             {/* Sync Button (Only show if local mode, though handy for backup in DB mode too) */}
+             {/* Refresh Button */}
+             <button
+                onClick={onRefreshData}
+                disabled={isRefreshing}
+                className={`p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title="Refresh Data"
+             >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+             </button>
+
+             {/* Sync Button */}
              <button
                 onClick={onOpenSync}
                 className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors border border-slate-700"
