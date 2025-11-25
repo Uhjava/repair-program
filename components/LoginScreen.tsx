@@ -32,8 +32,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 relative">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden z-10">
         <div className="bg-blue-600 p-8 text-center">
           <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
             <Truck className="h-8 w-8 text-white" />
@@ -123,6 +123,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             </button>
           </form>
         </div>
+      </div>
+
+      {/* Deployment Status Badge */}
+      <div className="mt-8 opacity-70 hover:opacity-100 transition-opacity">
+        <a href="https://app.netlify.com/projects/greenliterepairtracker/deploys" target="_blank" rel="noreferrer">
+          <img src="https://api.netlify.com/api/v1/badges/ecbfddbd-5384-4d6d-8827-95ee91964841/deploy-status" alt="Netlify Status" />
+        </a>
       </div>
     </div>
   );

@@ -5,14 +5,22 @@ import { neon } from '@neondatabase/serverless';
 // --- CONFIGURATION ---
 
 const getDbUrl = () => {
+  // We check for the VITE_ prefixed variable which works in the browser
   if (typeof import.meta !== 'undefined' && import.meta.env) {
+    // Falls back to empty string if not found
     return import.meta.env.VITE_FLEET_DATA_URL || '';
   }
   return '';
 };
 
 const DB_URL = getDbUrl();
-if (DB_URL) console.log("Neon DB URL found. Initializing connection...");
+if (DB_URL) {
+  console.log("Neon DB URL found. Initializing connection...");
+} else {
+  console.log("No DB URL found. App will run in Offline/Local Mode.");
+}
+
+// This establishes the connection using the browser-compatible driver
 const sql = DB_URL ? neon(DB_URL) : null;
 
 // KEYS
