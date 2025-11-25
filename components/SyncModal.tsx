@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Unit, DamageReport, SyncData } from '../types';
-import { Download, Upload, AlertTriangle, CheckCircle, X, FileJson, Database, Activity, Save } from 'lucide-react';
-import { isDbConfigured, getDbDebugInfo, saveManualDbUrl } from '../services/dbService';
+import { Download, Upload, AlertTriangle, CheckCircle, X, FileJson, Database, Activity, Save, RefreshCw, Wrench } from 'lucide-react';
+import { isDbConfigured, getDbDebugInfo, saveManualDbUrl, reseedDatabase } from '../services/dbService';
 
 interface SyncModalProps {
   isOpen: boolean;
@@ -16,6 +16,8 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
   const [error, setError] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
   const [manualUrl, setManualUrl] = useState('');
+  const [isReseeding, setIsReseeding] = useState(false);
+  
   const isDb = isDbConfigured();
   const dbInfo = getDbDebugInfo();
 
@@ -93,6 +95,23 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
     }, 1000);
   };
 
+  const handleReseed = async () => {
+    if (!confirm("This will attempt to add any missing units to the database. Existing units will not be affected. Continue?")) return;
+    
+    setIsReseeding(true);
+    try {
+        await reseedDatabase();
+        setSuccessMsg("Fleet list updated successfully! Reloading...");
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    } catch (e) {
+        setError("Failed to reseed database. Check connection.");
+    } finally {
+        setIsReseeding(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
@@ -106,7 +125,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
           </button>
         </div>
         
-        <div className="p-6 space-y-6 overflow-y-auto">
+        <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
           
           {/* Diagnostic Panel */}
           <div className={`rounded-xl p-4 border ${isDb ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
@@ -125,7 +144,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
                         <span className="font-mono">{dbInfo.urlMasked}</span>
                     </div>
                 )}
-                {!isDb && (
+                {dbInfo.error && (
+                    <div className="mt-2 text-red-600 font-semibold border-t border-red-200 pt-1">
+                        Error: {dbInfo.error}
+                    </div>
+                )}
+                {!isDb && !dbInfo.error && (
                     <p className="mt-2 text-amber-900 font-medium">
                         To enable Database Mode, add VITE_FLEET_DATA_URL to Netlify settings and trigger a redeploy.
                     </p>
@@ -155,6 +179,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
                             </div>
                         </div>
                     )}
+                    
+                    {manualUrl && (
+                        <div className="text-[10px] text-slate-400 font-mono break-all bg-slate-100 p-2 rounded">
+                            Preview: {manualUrl.match(/(postgres(?:ql)?:\/\/[^\s'"]+)/)?.[1] || manualUrl.trim().replace(/^['"]|['"]$/g, '')}
+                        </div>
+                    )}
 
                     <div className="flex gap-2">
                         <button 
@@ -174,6 +204,29 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
                     </div>
                 </div>
              </div>
+          )}
+          
+          {/* Manual Reseed Tool */}
+          {isDb && (
+            <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                <h3 className="font-semibold text-slate-800 text-sm mb-2 flex items-center gap-2">
+                    <Wrench className="h-3 w-3 text-slate-500" />
+                    Database Maintenance
+                </h3>
+                <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs text-slate-500">
+                        Missing units? Click here to check the master list and add any missing vehicles to the database.
+                    </p>
+                    <button
+                        onClick={handleReseed}
+                        disabled={isReseeding}
+                        className="whitespace-nowrap px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg transition-colors flex items-center gap-2"
+                    >
+                        {isReseeding ? <RefreshCw className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                        {isReseeding ? 'Updating...' : 'Repair Fleet List'}
+                    </button>
+                </div>
+            </div>
           )}
 
           <div className="h-px bg-slate-100"></div>

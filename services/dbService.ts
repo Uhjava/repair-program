@@ -49,23 +49,25 @@ const getDbUrl = () => {
 
 const DB_URL = getDbUrl();
 
-if (DB_URL) {
-  console.log("Neon DB URL found. Initializing connection...");
-} else {
-  console.log("No DB URL found. App will run in Offline/Local Mode.");
-}
-
 // Establish connection only if URL is valid
 let sql: any = null;
-try {
-  // Double check validity before initializing
-  if (DB_URL && (DB_URL.startsWith('postgres://') || DB_URL.startsWith('postgresql://'))) {
-    sql = neon(DB_URL);
-  } else if (DB_URL) {
-    console.error("Invalid DB URL format detected during init:", DB_URL);
+let initError: string = '';
+
+if (DB_URL) {
+  console.log("Neon DB URL detected. Initializing...");
+  try {
+    if (DB_URL.startsWith('postgres://') || DB_URL.startsWith('postgresql://')) {
+        sql = neon(DB_URL);
+    } else {
+        initError = 'Invalid URL Protocol';
+        console.error("Invalid DB URL format detected.");
+    }
+  } catch (e: any) {
+    initError = e.message || 'Initialization Failed';
+    console.error("Failed to initialize Neon client:", e);
   }
-} catch (e) {
-  console.error("Failed to initialize Neon client:", e);
+} else {
+  console.log("No DB URL found. App will run in Offline/Local Mode.");
 }
 
 // KEYS
@@ -204,8 +206,9 @@ export const getDbDebugInfo = () => {
   const url = getDbUrl();
   return {
     hasUrl: !!url,
-    urlMasked: url ? `${url.substring(0, 15)}...` : 'Not Set',
-    isOffline: !sql
+    urlMasked: url ? `${url.substring(0, 12)}...` : 'Not Set',
+    isOffline: !sql,
+    error: initError
   };
 };
 
@@ -232,7 +235,7 @@ export const seedDatabaseIfEmpty = async () => {
       ai_analysis text, suggested_parts text[], resolved_at text, approved_by text, approved_at text
     )`;
 
-    // Check if empty
+    // Check if truly empty
     const existingUnits = await sql`SELECT count(*) FROM units`;
     if (parseInt(existingUnits[0].count) === 0) {
       console.log("Seeding Database...");
@@ -250,6 +253,31 @@ export const seedDatabaseIfEmpty = async () => {
     console.error("Database Seeding/Connection Error:", err);
   }
   return true;
+};
+
+// Manually fix missing units by Upserting from MOCK_FLEET
+export const reseedDatabase = async () => {
+    if (!sql) throw new Error("No Database Connection");
+    
+    console.log("Starting Fleet Reseed...");
+    let addedCount = 0;
+    
+    // We iterate through the master list and add any missing ones
+    // ON CONFLICT DO NOTHING ensures we don't overwrite existing statuses
+    for (const unit of MOCK_FLEET) {
+        try {
+            await sql`
+                INSERT INTO units (id, name, type, model, status, mileage, last_inspection)
+                VALUES (${unit.id}, ${unit.name}, ${unit.type}, ${unit.model}, ${unit.status}, ${unit.mileage || 0}, ${unit.lastInspection || null})
+                ON CONFLICT (id) DO NOTHING
+            `;
+            addedCount++;
+        } catch (e) {
+            console.error(`Failed to seed unit ${unit.id}`, e);
+        }
+    }
+    console.log(`Reseed complete. Processed ${addedCount} units.`);
+    return addedCount;
 };
 
 export const fetchUnits = async (): Promise<Unit[]> => {
