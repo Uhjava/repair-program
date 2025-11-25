@@ -7,21 +7,37 @@ import { neon } from '@neondatabase/serverless';
 const getDbUrl = () => {
   // We check for the VITE_ prefixed variable which works in the browser
   if (typeof import.meta !== 'undefined' && import.meta.env) {
-    // Falls back to empty string if not found
-    return import.meta.env.VITE_FLEET_DATA_URL || '';
+    let url = import.meta.env.VITE_FLEET_DATA_URL || '';
+    
+    // CRITICAL FIX: Sanitize the URL. 
+    // Users often copy quotes ' or " from terminal commands. We must remove them.
+    if (url) {
+      url = url.trim().replace(/^['"]|['"]$/g, '');
+    }
+    return url;
   }
   return '';
 };
 
 const DB_URL = getDbUrl();
+
 if (DB_URL) {
   console.log("Neon DB URL found. Initializing connection...");
 } else {
   console.log("No DB URL found. App will run in Offline/Local Mode.");
 }
 
-// This establishes the connection using the browser-compatible driver
-const sql = DB_URL ? neon(DB_URL) : null;
+// Establish connection only if URL is valid
+let sql: any = null;
+try {
+  if (DB_URL && (DB_URL.startsWith('postgres://') || DB_URL.startsWith('postgresql://'))) {
+    sql = neon(DB_URL);
+  } else if (DB_URL) {
+    console.error("Invalid DB URL format. Expected postgresql://...");
+  }
+} catch (e) {
+  console.error("Failed to initialize Neon client:", e);
+}
 
 // KEYS
 const STORAGE_KEY_UNITS = 'fleetguard_units_v1';
@@ -150,8 +166,8 @@ export const getDbDebugInfo = () => {
   const url = getDbUrl();
   return {
     hasUrl: !!url,
-    urlMasked: url ? `${url.substring(0, 15)}...${url.substring(url.length - 5)}` : 'Not Set',
-    isOffline: !url
+    urlMasked: url ? `${url.substring(0, 10)}...` : 'Not Set',
+    isOffline: !sql
   };
 };
 

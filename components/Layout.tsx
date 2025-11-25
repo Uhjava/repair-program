@@ -26,7 +26,7 @@ export const Layout: React.FC<LayoutProps> = ({
   isRefreshing
 }) => {
   const isDatabaseConnected = isDbConfigured();
-  const pendingSyncs = getOfflineQueueSize();
+  const pendingSyncs = getOfflineQueueSize() || 0;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
