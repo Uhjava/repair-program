@@ -54,7 +54,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 ) : (
                    <>
                      <Database className="h-3.5 w-3.5 text-blue-400" />
-                     <span className="text-xs font-medium text-blue-400">Local Data</span>
+                     <button onClick={onOpenSync} className="text-xs font-medium text-blue-400 hover:text-blue-300">Local Data</button>
                    </>
                 )}
              </div>
