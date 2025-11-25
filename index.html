@@ -6,6 +6,14 @@
     <title>FleetGuard Repair Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      // Safety Polyfill: Prevents libraries from crashing if they try to access 'process'
+      window.process = {
+        env: {
+          NODE_ENV: 'production'
+        }
+      };
+    </script>
     <style>
       body {
         font-family: 'Inter', sans-serif;
@@ -35,9 +43,9 @@
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
     "recharts": "https://aistudiocdn.com/recharts@^3.5.0",
+    "@neondatabase/serverless": "https://aistudiocdn.com/@neondatabase/serverless@^1.0.2",
     "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "@neondatabase/serverless": "https://aistudiocdn.com/@neondatabase/serverless@^1.0.2"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }
 }
 </script>
