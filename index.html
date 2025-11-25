@@ -7,12 +7,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
+      // Global Error Handler for "White Screen of Death"
+      window.onerror = function(message, source, lineno, colno, error) {
+        document.body.innerHTML = `
+          <div style="background: #fee2e2; color: #991b1b; padding: 20px; font-family: sans-serif; height: 100vh;">
+            <h1 style="font-weight: bold; font-size: 20px; margin-bottom: 10px;">Application Crashed</h1>
+            <p><strong>Error:</strong> ${message}</p>
+            <p><strong>Source:</strong> ${source}:${lineno}</p>
+            <pre style="background: rgba(255,255,255,0.5); padding: 10px; margin-top: 20px; border-radius: 4px; overflow: auto;">${error ? error.stack : 'No stack trace'}</pre>
+          </div>
+        `;
+      };
+
       // Safety Polyfill: Prevents libraries from crashing if they try to access 'process'
       window.process = {
         env: {
           NODE_ENV: 'production'
         }
       };
+      // Polyfill for 'global' (needed by some older packages)
+      window.global = window;
     </script>
     <style>
       body {
@@ -34,7 +48,7 @@
         background: #94a3b8; 
       }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.0",

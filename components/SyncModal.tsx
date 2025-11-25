@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Unit, DamageReport, SyncData } from '../types';
-import { Download, Upload, AlertTriangle, CheckCircle, X, FileJson } from 'lucide-react';
-import { isDbConfigured } from '../services/dbService';
+import { Download, Upload, AlertTriangle, CheckCircle, X, FileJson, Database, Activity } from 'lucide-react';
+import { isDbConfigured, getDbDebugInfo } from '../services/dbService';
 
 interface SyncModalProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
   const [error, setError] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
   const isDb = isDbConfigured();
+  const dbInfo = getDbDebugInfo();
 
   if (!isOpen) return null;
 
@@ -76,23 +77,46 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <FileJson className="h-5 w-5 text-blue-600" />
-            {isDb ? 'Data Backup' : 'Data Synchronization'}
+            <Database className="h-5 w-5 text-blue-600" />
+            System & Data
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
         
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto">
+          
+          {/* Diagnostic Panel */}
+          <div className={`rounded-xl p-4 border ${isDb ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+            <h3 className={`text-sm font-bold flex items-center gap-2 mb-2 ${isDb ? 'text-emerald-800' : 'text-amber-800'}`}>
+                <Activity className="h-4 w-4" />
+                {isDb ? 'Online: Connected to Database' : 'Offline: Local Mode Active'}
+            </h3>
+            <div className="text-xs space-y-1 opacity-80">
+                <div className="flex justify-between">
+                    <span>Config Variable (VITE_FLEET_DATA_URL):</span>
+                    <span className="font-mono">{dbInfo.hasUrl ? 'DETECTED' : 'MISSING'}</span>
+                </div>
+                {dbInfo.hasUrl && (
+                    <div className="flex justify-between">
+                        <span>Connection Endpoint:</span>
+                        <span className="font-mono">{dbInfo.urlMasked}</span>
+                    </div>
+                )}
+                {!isDb && (
+                    <p className="mt-2 text-amber-900 font-medium">
+                        To enable Database Mode, add VITE_FLEET_DATA_URL to Netlify settings and trigger a redeploy.
+                    </p>
+                )}
+            </div>
+          </div>
+
           <p className="text-sm text-slate-600 leading-relaxed">
-            {isDb 
-              ? 'You are connected to the Neon Database. You can export a backup of the current state, or import a JSON file to overwrite the database.'
-              : 'This app is running in Local Data mode. Use this tool to save your work to a file or move data between devices.'
-            }
+             Use the tools below to backup your data or manually sync between devices using files.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -103,7 +127,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
               </div>
               <div>
                 <h3 className="font-semibold text-slate-800">Export Backup</h3>
-                <p className="text-xs text-slate-500 mt-1">Save fleet & reports to JSON.</p>
+                <p className="text-xs text-slate-500 mt-1">Save current state to JSON.</p>
               </div>
               <button 
                 onClick={handleExport}
@@ -151,12 +175,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
               {successMsg}
             </div>
           )}
-        </div>
-        
-        <div className="p-4 bg-slate-50 border-t border-slate-100 text-center">
-            <p className="text-xs text-slate-400">
-                Warning: Importing data will completely overwrite the current records.
-            </p>
         </div>
       </div>
     </div>

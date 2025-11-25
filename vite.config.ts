@@ -6,16 +6,6 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
-    sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'lucide-react'],
-          charts: ['recharts'],
-          db: ['@neondatabase/serverless'],
-          ai: ['@google/genai']
-        }
-      }
-    }
+    sourcemap: true
   },
 });

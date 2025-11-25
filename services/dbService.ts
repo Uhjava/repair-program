@@ -146,6 +146,15 @@ export const syncOfflineChanges = async () => {
 
 export const isDbConfigured = () => !!sql;
 
+export const getDbDebugInfo = () => {
+  const url = getDbUrl();
+  return {
+    hasUrl: !!url,
+    urlMasked: url ? `${url.substring(0, 15)}...${url.substring(url.length - 5)}` : 'Not Set',
+    isOffline: !url
+  };
+};
+
 export const seedDatabaseIfEmpty = async () => {
   if (!sql) {
     const storedUnits = localStorage.getItem(STORAGE_KEY_UNITS);
