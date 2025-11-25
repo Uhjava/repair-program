@@ -6,24 +6,39 @@ import { neon } from '@neondatabase/serverless';
 
 const MANUAL_URL_KEY = 'fleetguard_manual_db_url';
 
+// Helper to extract the actual URL if user pastes a command like "psql 'postgres://...'"
+const sanitizeDbUrl = (input: string): string => {
+  if (!input) return '';
+  
+  // Check for the protocol pattern postgres:// or postgresql://
+  // This regex grabs the URL until it hits a space, a quote, or the end of the line
+  const match = input.match(/(postgres(?:ql)?:\/\/[^\s'"]+)/);
+  if (match) {
+    return match[1];
+  }
+  
+  // Fallback: just strip quotes if the regex didn't match (e.g. valid url surrounded by quotes)
+  return input.trim().replace(/^['"]|['"]$/g, '');
+};
+
 const getDbUrl = () => {
   let url = '';
 
   // 1. Try Environment Variable (Netlify)
   if (typeof import.meta !== 'undefined' && import.meta.env) {
-    url = import.meta.env.VITE_FLEET_DATA_URL || '';
+    url = import.meta.env.VITE_FLEET_DATA_URL || import.meta.env.VITE_DATABASE_URL || import.meta.env.VITE_NEON_URL || '';
   }
   
-  // Sanitize
-  if (url) {
-    url = url.trim().replace(/^['"]|['"]$/g, '');
-  }
+  // Sanitize Env Var
+  url = sanitizeDbUrl(url);
 
   // 2. Fallback to Manual Override (Local Storage)
   if (!url) {
     try {
       const manual = localStorage.getItem(MANUAL_URL_KEY);
-      if (manual) url = manual.trim();
+      if (manual) {
+        url = sanitizeDbUrl(manual);
+      }
     } catch (e) {
       console.error("Error reading manual DB URL", e);
     }
@@ -35,7 +50,7 @@ const getDbUrl = () => {
 const DB_URL = getDbUrl();
 
 if (DB_URL) {
-  console.log("Neon DB URL found (Env or Manual). Initializing connection...");
+  console.log("Neon DB URL found. Initializing connection...");
 } else {
   console.log("No DB URL found. App will run in Offline/Local Mode.");
 }
@@ -43,10 +58,11 @@ if (DB_URL) {
 // Establish connection only if URL is valid
 let sql: any = null;
 try {
+  // Double check validity before initializing
   if (DB_URL && (DB_URL.startsWith('postgres://') || DB_URL.startsWith('postgresql://'))) {
     sql = neon(DB_URL);
   } else if (DB_URL) {
-    console.error("Invalid DB URL format. Expected postgresql://...");
+    console.error("Invalid DB URL format detected during init:", DB_URL);
   }
 } catch (e) {
   console.error("Failed to initialize Neon client:", e);
@@ -66,9 +82,10 @@ interface OfflineAction {
 
 // --- HELPER FUNCTIONS ---
 
-export const saveManualDbUrl = (url: string) => {
-  if (url) {
-    localStorage.setItem(MANUAL_URL_KEY, url.trim());
+export const saveManualDbUrl = (input: string) => {
+  if (input) {
+    const cleanUrl = sanitizeDbUrl(input);
+    localStorage.setItem(MANUAL_URL_KEY, cleanUrl);
   } else {
     localStorage.removeItem(MANUAL_URL_KEY);
   }
@@ -187,7 +204,7 @@ export const getDbDebugInfo = () => {
   const url = getDbUrl();
   return {
     hasUrl: !!url,
-    urlMasked: url ? `${url.substring(0, 10)}...` : 'Not Set',
+    urlMasked: url ? `${url.substring(0, 15)}...` : 'Not Set',
     isOffline: !sql
   };
 };
@@ -203,6 +220,7 @@ export const seedDatabaseIfEmpty = async () => {
   }
 
   try {
+    // Ensure tables exist
     await sql`CREATE TABLE IF NOT EXISTS units (
       id text PRIMARY KEY, name text NOT NULL, type text NOT NULL, model text NOT NULL, 
       status text NOT NULL, mileage numeric, last_inspection text
@@ -214,6 +232,7 @@ export const seedDatabaseIfEmpty = async () => {
       ai_analysis text, suggested_parts text[], resolved_at text, approved_by text, approved_at text
     )`;
 
+    // Check if empty
     const existingUnits = await sql`SELECT count(*) FROM units`;
     if (parseInt(existingUnits[0].count) === 0) {
       console.log("Seeding Database...");
