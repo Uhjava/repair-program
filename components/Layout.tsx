@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Truck, LayoutDashboard, AlertTriangle, UserCircle, LogOut, Cloud, Wifi, WifiOff } from 'lucide-react';
+import { Truck, LayoutDashboard, AlertTriangle, UserCircle, LogOut, Cloud, Database } from 'lucide-react';
 import { User, UserRole } from '../types';
 
 interface LayoutProps {
@@ -25,24 +24,15 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">FleetGuard</h1>
-              <p className="text-xs text-slate-400">Repair & Damage Tracker</p>
+              <p className="text-xs text-slate-400">v1.1 • Local Storage Mode</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-             {/* DB Status Indicator */}
+             {/* Storage Status Indicator */}
              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50">
-                {isOffline ? (
-                    <>
-                        <WifiOff className="h-3.5 w-3.5 text-slate-400" />
-                        <span className="text-xs font-medium text-slate-400">Local Mode</span>
-                    </>
-                ) : (
-                    <>
-                        <Wifi className="h-3.5 w-3.5 text-emerald-400" />
-                        <span className="text-xs font-medium text-emerald-400">DB Connected</span>
-                    </>
-                )}
+                <Database className="h-3.5 w-3.5 text-blue-400" />
+                <span className="text-xs font-medium text-blue-400">Browser Storage</span>
              </div>
 
              {/* Sync Button */}

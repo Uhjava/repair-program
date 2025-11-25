@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { LoginScreen } from './components/LoginScreen';
@@ -9,11 +8,8 @@ import { StatusBadge } from './components/StatusBadge';
 import { SyncModal } from './components/SyncModal';
 import { Unit, DamageReport, UnitStatus, RepairPriority, UserRole, User, SyncData } from './types';
 import { summarizeReports } from './services/geminiService';
-import { fetchUnits, fetchReports, createReport, updateReport, updateUnitStatus, seedDatabaseIfEmpty, isDbConfigured } from './services/dbService';
-import { Clock, CheckCircle2, AlertTriangle, ChevronRight, ArrowLeft, ShieldCheck, Lock, WifiOff } from 'lucide-react';
-
-// Fallback data imports in case DB is not connected
-import { MOCK_FLEET, INITIAL_REPORTS } from './constants';
+import { fetchUnits, fetchReports, createReport, updateReport, updateUnitStatus, seedDatabaseIfEmpty } from './services/dbService';
+import { CheckCircle2, AlertTriangle, ChevronRight, ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -28,63 +24,25 @@ const App = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [reports, setReports] = useState<DamageReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isOffline, setIsOffline] = useState(!isDbConfigured());
 
   // Load Data on Mount
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      if (isDbConfigured()) {
-        try {
-            await seedDatabaseIfEmpty();
-            const fetchedUnits = await fetchUnits();
-            const fetchedReports = await fetchReports();
-            setUnits(fetchedUnits);
-            setReports(fetchedReports);
-            setIsOffline(false);
-            console.log("✅ Successfully connected to Neon Database!");
-        } catch (e) {
-            console.error("❌ Connection failed. Falling back to offline mode.", e);
-            setIsOffline(true);
-            loadFallbackData();
-        }
-      } else {
-        // Fallback to local storage if no DB keys
-        console.log("⚠️ No Database URL found. Running in Local Mode.");
-        loadFallbackData();
-      }
+      await seedDatabaseIfEmpty(); // Initialize Local Storage defaults if needed
+      const fetchedUnits = await fetchUnits();
+      const fetchedReports = await fetchReports();
+      setUnits(fetchedUnits);
+      setReports(fetchedReports);
       setIsLoading(false);
     };
 
     loadData();
-    // Note: Realtime subscriptions are removed for Neon (HTTP stateless). 
-    // Data refreshes on page load or manual actions.
   }, []);
-
-  const loadFallbackData = () => {
-    try {
-        const savedUnits = localStorage.getItem('fleet_units');
-        setUnits(savedUnits ? JSON.parse(savedUnits) : MOCK_FLEET);
-        
-        const savedReports = localStorage.getItem('fleet_reports');
-        setReports(savedReports ? JSON.parse(savedReports) : INITIAL_REPORTS);
-    } catch (e) {
-        setUnits(MOCK_FLEET);
-        setReports(INITIAL_REPORTS);
-    }
-  };
 
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [isCreatingReport, setIsCreatingReport] = useState(false);
   const [aiSummary, setAiSummary] = useState<string>('');
-
-  // Persist to LocalStorage as backup/offline mode
-  useEffect(() => {
-    if (!isLoading) {
-        localStorage.setItem('fleet_units', JSON.stringify(units));
-        localStorage.setItem('fleet_reports', JSON.stringify(reports));
-    }
-  }, [units, reports, isLoading]);
 
   // When a unit is selected, switch view to details
   const handleSelectUnit = (unit: Unit) => {
@@ -103,10 +61,11 @@ const App = () => {
   };
 
   const handleImportData = (data: SyncData) => {
+    // When importing, we update state AND local storage
     setUnits(data.units);
     setReports(data.reports);
-    // Note: Importing from JSON currently only updates Local State 
-    // unless we implement bulk upsert to DB here.
+    localStorage.setItem('fleetguard_units_v1', JSON.stringify(data.units));
+    localStorage.setItem('fleetguard_reports_v1', JSON.stringify(data.reports));
   };
 
   const handleCreateReport = async (data: Partial<DamageReport>) => {
@@ -507,16 +466,8 @@ const App = () => {
         currentUser={currentUser}
         onLogout={handleLogout}
         onOpenSync={() => setIsSyncModalOpen(true)}
-        isOffline={isOffline}
+        isOffline={false} // Always false because we are in Local Storage mode which is always "online" for the user
     >
-        {isOffline && (
-            <div className="bg-amber-500 text-white text-xs font-bold text-center py-1">
-                <span className="flex items-center justify-center gap-2">
-                    <WifiOff className="h-3 w-3" />
-                    Offline Mode - Data saving to local device only
-                </span>
-            </div>
-        )}
         {renderContent()}
         <SyncModal 
             isOpen={isSyncModalOpen}

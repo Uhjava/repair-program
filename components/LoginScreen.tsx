@@ -23,8 +23,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
 
     // Simple mock authentication for prototype
-    if (role === UserRole.MANAGER && pin !== '1234') {
-      setError('Invalid Access PIN. (Hint: Try 1234)');
+    if (role === UserRole.MANAGER && pin !== '6767') {
+      setError('Invalid Access PIN.');
       return;
     }
 
@@ -99,7 +99,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                    placeholder="Enter PIN (1234)"
+                    placeholder="Enter PIN"
                     maxLength={4}
                   />
                 </div>
