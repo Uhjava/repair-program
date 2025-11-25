@@ -8,7 +8,7 @@ import { StatusBadge } from './components/StatusBadge';
 import { SyncModal } from './components/SyncModal';
 import { Unit, DamageReport, UnitStatus, RepairPriority, UserRole, User, SyncData } from './types';
 import { summarizeReports } from './services/geminiService';
-import { fetchUnits, fetchReports, createReport, updateReport, updateUnitStatus, seedDatabaseIfEmpty } from './services/dbService';
+import { fetchUnits, fetchReports, createReport, updateReport, updateUnitStatus, seedDatabaseIfEmpty, syncOfflineChanges } from './services/dbService';
 import { CheckCircle2, AlertTriangle, ChevronRight, ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
 
 const App = () => {
@@ -31,6 +31,7 @@ const App = () => {
     setIsRefreshing(true);
     try {
       await seedDatabaseIfEmpty(); // Initialize if needed
+      await syncOfflineChanges(); // Try to upload any offline work
       const fetchedUnits = await fetchUnits();
       const fetchedReports = await fetchReports();
       setUnits(fetchedUnits);
@@ -155,8 +156,6 @@ const App = () => {
     const targetReport = reports.find(r => r.id === reportId);
     if (targetReport) {
       const unitId = targetReport.unitId;
-      // Note: using current state 'reports' for calculation might be slightly stale if many updates happen fast,
-      // but sufficient for this logic. We filter the *updated* state conceptually.
       const unitReports = reports.map(r => r.id === reportId ? { ...r, ...updates } : r);
       const hasOpenIssues = unitReports.filter(r => r.unitId === unitId).some(r => r.status === 'OPEN' || r.status === 'IN_PROGRESS');
       
@@ -477,7 +476,7 @@ const App = () => {
         onLogout={handleLogout}
         onOpenSync={() => setIsSyncModalOpen(true)}
         onRefreshData={loadData}
-        isOffline={false} // Always false because we are in Local Storage mode which is always "online" for the user
+        isOffline={false}
         isRefreshing={isRefreshing}
     >
         {renderContent()}

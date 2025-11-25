@@ -1,7 +1,7 @@
 import React from 'react';
-import { Truck, LayoutDashboard, AlertTriangle, UserCircle, LogOut, Cloud, Database, RefreshCw } from 'lucide-react';
+import { Truck, LayoutDashboard, AlertTriangle, UserCircle, LogOut, Cloud, Database, RefreshCw, UploadCloud } from 'lucide-react';
 import { User, UserRole } from '../types';
-import { isDbConfigured } from '../services/dbService';
+import { isDbConfigured, getOfflineQueueSize } from '../services/dbService';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -23,10 +23,10 @@ export const Layout: React.FC<LayoutProps> = ({
   onLogout, 
   onOpenSync, 
   onRefreshData,
-  isOffline,
   isRefreshing
 }) => {
   const isDatabaseConnected = isDbConfigured();
+  const pendingSyncs = getOfflineQueueSize();
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -58,6 +58,14 @@ export const Layout: React.FC<LayoutProps> = ({
                    </>
                 )}
              </div>
+
+             {/* Pending Sync Indicator */}
+             {pendingSyncs > 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-orange-900/50 bg-orange-900/20 text-orange-400" title={`${pendingSyncs} changes waiting to sync`}>
+                    <UploadCloud className="h-4 w-4" />
+                    <span className="text-xs font-bold">{pendingSyncs}</span>
+                </div>
+             )}
 
              {/* Refresh Button */}
              <button
