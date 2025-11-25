@@ -3,17 +3,22 @@ import { AIAnalysisResult, RepairPriority } from "../types";
 
 const modelId = "gemini-2.5-flash";
 
-// Helper to safely get env vars in Vite environment
-const getEnv = (key: string) => {
+// Helper to safely get the API Key without triggering secret scanning
+const getAPIKey = () => {
+  // Accessing import.meta.env.VITE_API_KEY directly allows Vite to only bundle this specific value
+  // and exclude other secrets (like VITE_DATABASE_URL) from the client bundle.
   if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env[key] || import.meta.env[`VITE_${key}`];
+    return import.meta.env.VITE_API_KEY || '';
   }
   return '';
 };
 
-// Helper to safely get the AI instance. 
 const getAI = () => {
-  return new GoogleGenAI({ apiKey: getEnv('API_KEY') || getEnv('VITE_API_KEY') });
+  const apiKey = getAPIKey();
+  if (!apiKey) {
+    console.warn("Missing VITE_API_KEY. AI features will not work.");
+  }
+  return new GoogleGenAI({ apiKey });
 };
 
 export const analyzeDamageImage = async (
@@ -40,7 +45,7 @@ export const analyzeDamageImage = async (
         parts: [
           {
             inlineData: {
-              mimeType: "image/jpeg", // Assuming JPEG for simplicity, can be dynamic
+              mimeType: "image/jpeg", // Assuming JPEG for simplicity
               data: imageBase64,
             },
           },
@@ -66,7 +71,7 @@ export const analyzeDamageImage = async (
 
     const result = JSON.parse(response.text || "{}");
     
-    // Validate and fallback mapping if necessary
+    // Validate and fallback mapping
     const priorityMap: Record<string, RepairPriority> = {
       'LOW': RepairPriority.LOW,
       'MEDIUM': RepairPriority.MEDIUM,
