@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Unit, DamageReport, SyncData } from '../types';
 import { Download, Upload, AlertTriangle, CheckCircle, X, FileJson } from 'lucide-react';
+import { isDbConfigured } from '../services/dbService';
 
 interface SyncModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
+  const isDb = isDbConfigured();
 
   if (!isOpen) return null;
 
@@ -78,7 +80,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
         <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <FileJson className="h-5 w-5 text-blue-600" />
-            Data Synchronization
+            {isDb ? 'Data Backup' : 'Data Synchronization'}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
             <X className="h-5 w-5" />
@@ -87,7 +89,10 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
         
         <div className="p-6 space-y-6">
           <p className="text-sm text-slate-600 leading-relaxed">
-            Since this app runs without a central server, use this tool to move your data between devices (e.g., from Laptop to Phone).
+            {isDb 
+              ? 'You are connected to the Neon Database. You can export a backup of the current state, or import a JSON file to overwrite the database.'
+              : 'This app is running in Local Data mode. Use this tool to save your work to a file or move data between devices.'
+            }
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -97,14 +102,14 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
                 <Download className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800">Export Data</h3>
-                <p className="text-xs text-slate-500 mt-1">Save current units & reports to a file.</p>
+                <h3 className="font-semibold text-slate-800">Export Backup</h3>
+                <p className="text-xs text-slate-500 mt-1">Save fleet & reports to JSON.</p>
               </div>
               <button 
                 onClick={handleExport}
                 className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                Download Backup
+                Download File
               </button>
             </div>
 
@@ -115,7 +120,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
               </div>
               <div>
                 <h3 className="font-semibold text-slate-800">Import Data</h3>
-                <p className="text-xs text-slate-500 mt-1">Load data from a backup file.</p>
+                <p className="text-xs text-slate-500 mt-1">Overwrite with backup file.</p>
               </div>
               <button 
                 onClick={() => fileInputRef.current?.click()}
@@ -150,7 +155,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
         
         <div className="p-4 bg-slate-50 border-t border-slate-100 text-center">
             <p className="text-xs text-slate-400">
-                Tip: Importing data will overwrite the current data on this device.
+                Warning: Importing data will completely overwrite the current records.
             </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Truck, LayoutDashboard, AlertTriangle, UserCircle, LogOut, Cloud, Database } from 'lucide-react';
+import { Truck, LayoutDashboard, AlertTriangle, UserCircle, LogOut, Cloud, Database, Wifi, WifiOff } from 'lucide-react';
 import { User, UserRole } from '../types';
+import { isDbConfigured } from '../services/dbService';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,8 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, currentUser, onLogout, onOpenSync, isOffline }) => {
+  const isDatabaseConnected = isDbConfigured();
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header */}
@@ -24,25 +27,34 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">FleetGuard</h1>
-              <p className="text-xs text-slate-400">v1.1 • Local Storage Mode</p>
+              <p className="text-xs text-slate-400">Repair & Damage Tracker</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
              {/* Storage Status Indicator */}
-             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50">
-                <Database className="h-3.5 w-3.5 text-blue-400" />
-                <span className="text-xs font-medium text-blue-400">Browser Storage</span>
+             <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-slate-800/50 ${isDatabaseConnected ? 'border-emerald-900/50' : 'border-slate-700'}`}>
+                {isDatabaseConnected ? (
+                   <>
+                     <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                     <span className="text-xs font-medium text-emerald-400">Neon DB</span>
+                   </>
+                ) : (
+                   <>
+                     <Database className="h-3.5 w-3.5 text-blue-400" />
+                     <span className="text-xs font-medium text-blue-400">Local Data</span>
+                   </>
+                )}
              </div>
 
-             {/* Sync Button */}
+             {/* Sync Button (Only show if local mode, though handy for backup in DB mode too) */}
              <button
                 onClick={onOpenSync}
                 className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors border border-slate-700"
-                title="Sync Data"
+                title="Sync/Backup Data"
              >
                 <Cloud className="h-4 w-4" />
-                <span className="text-xs font-medium">Sync Data</span>
+                <span className="text-xs font-medium">Backup</span>
              </button>
 
              <div className="hidden sm:flex flex-col items-end">
