@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Unit, DamageReport, SyncData } from '../types';
-import { Download, Upload, AlertTriangle, CheckCircle, X, FileJson, Database, Activity } from 'lucide-react';
-import { isDbConfigured, getDbDebugInfo } from '../services/dbService';
+import { Download, Upload, AlertTriangle, CheckCircle, X, FileJson, Database, Activity, Save } from 'lucide-react';
+import { isDbConfigured, getDbDebugInfo, saveManualDbUrl } from '../services/dbService';
 
 interface SyncModalProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
+  const [manualUrl, setManualUrl] = useState('');
   const isDb = isDbConfigured();
   const dbInfo = getDbDebugInfo();
 
@@ -75,6 +76,23 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleSaveManualUrl = () => {
+    if (!manualUrl.trim()) return;
+    saveManualDbUrl(manualUrl);
+    setSuccessMsg("URL Saved. Reloading...");
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+  };
+
+  const handleClearManualUrl = () => {
+    saveManualDbUrl('');
+    setSuccessMsg("Override cleared. Reloading...");
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
@@ -115,8 +133,43 @@ export const SyncModal: React.FC<SyncModalProps> = ({ isOpen, onClose, units, re
             </div>
           </div>
 
-          <p className="text-sm text-slate-600 leading-relaxed">
-             Use the tools below to backup your data or manually sync between devices using files.
+          {/* Manual Connection Override */}
+          {!isDb && (
+             <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                <h3 className="font-semibold text-slate-800 text-sm mb-2">Manual Connection Override</h3>
+                <p className="text-xs text-slate-500 mb-3">If Netlify settings are not working, paste your Neon DB Connection String here.</p>
+                <div className="space-y-2">
+                    <input 
+                        type="text" 
+                        value={manualUrl}
+                        onChange={(e) => setManualUrl(e.target.value)}
+                        placeholder="postgres://..."
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={handleSaveManualUrl}
+                            disabled={!manualUrl.trim()}
+                            className="flex-1 py-1.5 bg-blue-600 disabled:bg-slate-300 disabled:cursor-not-allowed hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1"
+                        >
+                            <Save className="h-3 w-3" />
+                            Save & Connect
+                        </button>
+                        <button 
+                            onClick={handleClearManualUrl}
+                            className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 text-xs font-medium rounded-lg transition-colors"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                </div>
+             </div>
+          )}
+
+          <div className="h-px bg-slate-100"></div>
+
+          <p className="text-sm text-slate-600 leading-relaxed font-medium">
+             Backup Tools
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

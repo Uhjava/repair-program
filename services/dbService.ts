@@ -4,25 +4,38 @@ import { neon } from '@neondatabase/serverless';
 
 // --- CONFIGURATION ---
 
+const MANUAL_URL_KEY = 'fleetguard_manual_db_url';
+
 const getDbUrl = () => {
-  // We check for the VITE_ prefixed variable which works in the browser
+  let url = '';
+
+  // 1. Try Environment Variable (Netlify)
   if (typeof import.meta !== 'undefined' && import.meta.env) {
-    let url = import.meta.env.VITE_FLEET_DATA_URL || '';
-    
-    // CRITICAL FIX: Sanitize the URL. 
-    // Users often copy quotes ' or " from terminal commands. We must remove them.
-    if (url) {
-      url = url.trim().replace(/^['"]|['"]$/g, '');
-    }
-    return url;
+    url = import.meta.env.VITE_FLEET_DATA_URL || '';
   }
-  return '';
+  
+  // Sanitize
+  if (url) {
+    url = url.trim().replace(/^['"]|['"]$/g, '');
+  }
+
+  // 2. Fallback to Manual Override (Local Storage)
+  if (!url) {
+    try {
+      const manual = localStorage.getItem(MANUAL_URL_KEY);
+      if (manual) url = manual.trim();
+    } catch (e) {
+      console.error("Error reading manual DB URL", e);
+    }
+  }
+
+  return url;
 };
 
 const DB_URL = getDbUrl();
 
 if (DB_URL) {
-  console.log("Neon DB URL found. Initializing connection...");
+  console.log("Neon DB URL found (Env or Manual). Initializing connection...");
 } else {
   console.log("No DB URL found. App will run in Offline/Local Mode.");
 }
@@ -52,6 +65,14 @@ interface OfflineAction {
 }
 
 // --- HELPER FUNCTIONS ---
+
+export const saveManualDbUrl = (url: string) => {
+  if (url) {
+    localStorage.setItem(MANUAL_URL_KEY, url.trim());
+  } else {
+    localStorage.removeItem(MANUAL_URL_KEY);
+  }
+};
 
 const getStoredUnits = (): Unit[] => {
   try {

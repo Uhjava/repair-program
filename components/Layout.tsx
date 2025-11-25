@@ -45,7 +45,10 @@ export const Layout: React.FC<LayoutProps> = ({
 
           <div className="flex items-center gap-4">
              {/* Storage Status Indicator */}
-             <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-slate-800/50 ${isDatabaseConnected ? 'border-emerald-900/50' : 'border-slate-700'}`}>
+             <div 
+                onClick={onOpenSync}
+                className={`cursor-pointer hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-slate-800/50 hover:bg-slate-800 transition-colors ${isDatabaseConnected ? 'border-emerald-900/50' : 'border-slate-700'}`}
+             >
                 {isDatabaseConnected ? (
                    <>
                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -54,7 +57,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 ) : (
                    <>
                      <Database className="h-3.5 w-3.5 text-blue-400" />
-                     <button onClick={onOpenSync} className="text-xs font-medium text-blue-400 hover:text-blue-300">Local Data</button>
+                     <span className="text-xs font-medium text-blue-400">Local Data</span>
                    </>
                 )}
              </div>
