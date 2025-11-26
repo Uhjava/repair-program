@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: true,
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
   },
+  define: {
+    'process.env': process.env || {} 
+  }
 });

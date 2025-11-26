@@ -1,7 +1,8 @@
 import React from 'react';
-import { Truck, LayoutDashboard, AlertTriangle, UserCircle, LogOut, Cloud, Database, RefreshCw, UploadCloud } from 'lucide-react';
+import { LayoutDashboard, AlertTriangle, UserCircle, LogOut, Cloud, Database, RefreshCw, UploadCloud, Truck } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { isDbConfigured, getOfflineQueueSize } from '../services/dbService';
+import { Logo } from './Logo';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -33,13 +34,16 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Header */}
       <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <Truck className="h-6 w-6 text-white" />
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-600/20 border border-blue-500/30 p-2 rounded-lg">
+              <Logo className="h-6 w-6 text-blue-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">FleetGuard</h1>
-              <p className="text-xs text-slate-400">Repair & Damage Tracker</p>
+              <h1 className="text-xl font-bold tracking-tight">Fleet Repair Tracker</h1>
+              <p className="text-xs text-slate-400 flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                Secure System
+              </p>
             </div>
           </div>
 

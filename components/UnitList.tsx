@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Unit, UnitType, UnitStatus } from '../types';
 import { StatusBadge } from './StatusBadge';
 import { Search, Filter, ChevronRight, Truck, Container, ArrowDownAZ, AlertCircle, X } from 'lucide-react';
+import { Logo } from './Logo';
 
 export type UnitFilterMode = 'ALL' | 'ISSUES' | UnitStatus;
 
@@ -54,11 +55,15 @@ export const UnitList: React.FC<UnitListProps> = ({ units, onSelectUnit, initial
                 Fleet Inventory ({filteredUnits.length})
             </h3>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+             {/* Security Logo in Search Bar */}
+             <Logo className="h-4 w-4 text-blue-400 group-focus-within:text-blue-600 transition-colors" />
+             <div className="h-4 w-px bg-slate-300"></div>
+          </div>
           <input
             type="text"
-            placeholder="Search ID (e.g., GST 01-01)..."
+            placeholder="Search Fleet ID..."
             className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

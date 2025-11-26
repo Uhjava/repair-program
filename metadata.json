@@ -1,5 +1,5 @@
 {
-  "name": "FleetGuard Repair Tracker",
+  "name": "Fleet Repair Tracker",
   "description": "A comprehensive fleet management tool to document truck and trailer damage, analyze repairs using AI, and track unit status.",
   "requestFramePermissions": [
     "camera",

@@ -7,8 +7,8 @@ const modelId = "gemini-2.5-flash";
 const getAPIKey = () => {
   // Accessing import.meta.env.VITE_API_KEY directly allows Vite to only bundle this specific value
   // and exclude other secrets (like VITE_DATABASE_URL) from the client bundle.
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env.VITE_API_KEY || '';
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+    return (import.meta as any).env.VITE_API_KEY || '';
   }
   return '';
 };

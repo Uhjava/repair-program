@@ -25,8 +25,8 @@ const getDbUrl = () => {
   let url = '';
 
   // 1. Try Environment Variable (Netlify)
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    url = import.meta.env.VITE_FLEET_DATA_URL || import.meta.env.VITE_DATABASE_URL || import.meta.env.VITE_NEON_URL || '';
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+    url = (import.meta as any).env.VITE_FLEET_DATA_URL || (import.meta as any).env.VITE_DATABASE_URL || (import.meta as any).env.VITE_NEON_URL || '';
   }
   
   // Sanitize Env Var

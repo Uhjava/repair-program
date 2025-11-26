@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { LoginScreen } from './components/LoginScreen';
 import { Dashboard } from './components/Dashboard';
@@ -10,6 +10,8 @@ import { Unit, DamageReport, UnitStatus, RepairPriority, UserRole, User, SyncDat
 import { summarizeReports } from './services/geminiService';
 import { fetchUnits, fetchReports, createReport, updateReport, updateUnitStatus, seedDatabaseIfEmpty, syncOfflineChanges } from './services/dbService';
 import { CheckCircle2, AlertTriangle, ChevronRight, ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
+
+const AUTO_LOGOUT_TIME_MS = 15 * 60 * 1000; // 15 Minutes
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -25,6 +27,52 @@ const App = () => {
   const [reports, setReports] = useState<DamageReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  // Moved these up to avoid reference error in useEffect
+  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+  const [isCreatingReport, setIsCreatingReport] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string>('');
+
+  // Security: Auto-Logout Timer
+  const activityTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetActivityTimer = () => {
+    if (activityTimerRef.current) clearTimeout(activityTimerRef.current);
+    if (currentUser) {
+      activityTimerRef.current = setTimeout(() => {
+        handleLogout();
+        setSessionExpired(true);
+      }, AUTO_LOGOUT_TIME_MS);
+    }
+  };
+
+  useEffect(() => {
+    // Listen for user activity
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    const handler = () => resetActivityTimer();
+    
+    events.forEach(event => window.addEventListener(event, handler));
+    
+    // Initial start
+    resetActivityTimer();
+
+    return () => {
+      if (activityTimerRef.current) clearTimeout(activityTimerRef.current);
+      events.forEach(event => window.removeEventListener(event, handler));
+    };
+  }, [currentUser]);
+
+  // Security: Dynamic Favicon Injection (Safe way to add logo to browser tab)
+  useEffect(() => {
+    const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement || document.createElement('link');
+    link.type = 'image/svg+xml';
+    link.rel = 'icon';
+    // Truck SVG as Data URI to match the branding
+    link.href = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232563eb%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2%22/><path d=%22M15 18H9%22/><path d=%22M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14%22/><circle cx=%2217%22 cy=%2218%22 r=%222%22/><circle cx=%227%22 cy=%2218%22 r=%222%22/></svg>`;
+    document.getElementsByTagName('head')[0].appendChild(link);
+    document.title = "Fleet Repair Tracker | Secure";
+  }, []);
 
   // Load Data function
   const loadData = async () => {
@@ -47,13 +95,15 @@ const App = () => {
   // Load Data on Mount
   useEffect(() => {
     loadData();
-  }, []);
+    // Auto-refresh every 30 seconds for live updates
+    const interval = setInterval(() => {
+        if (!isCreatingReport) { // Don't refresh if user is typing
+            loadData();
+        }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [isCreatingReport]);
 
-  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
-  const [isCreatingReport, setIsCreatingReport] = useState(false);
-  const [aiSummary, setAiSummary] = useState<string>('');
-
-  // When a unit is selected, switch view to details
   const handleSelectUnit = (unit: Unit) => {
     setSelectedUnit(unit);
     setActiveTab('unit_detail');
@@ -61,6 +111,7 @@ const App = () => {
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
+    setSessionExpired(false);
     setActiveTab('dashboard');
   };
 
@@ -190,7 +241,17 @@ const App = () => {
 
   // If not logged in, show login screen
   if (!currentUser) {
-    return <LoginScreen onLogin={handleLogin} />;
+    return (
+        <>
+            {sessionExpired && (
+                <div className="fixed top-4 right-4 z-[100] bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm flex items-center gap-2 animate-fade-in">
+                    <Lock className="h-4 w-4 text-orange-400" />
+                    Logged out due to inactivity
+                </div>
+            )}
+            <LoginScreen onLogin={handleLogin} />
+        </>
+    );
   }
 
   // Render content based on active tab and state
